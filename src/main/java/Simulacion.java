@@ -6,19 +6,27 @@ import java.util.stream.Stream;
 
 public class Simulacion {
 
+
+    /////////////GLOBAL VAR////////////////
+
     private static Integer N = 0;
     private static Integer HV = -1;
     private static Integer T = 0;
     private static Integer TF;
     private static Integer TPT = 0;
+    private static Double[] NTLineMax;
+    private static Double[] NTLineMin;
     private static Integer[] NTLine;
     private static Integer[] TPS;
     private static Integer[] lines;
-    private static Integer[] STA;
-    private static Integer[] STS;
-    private static Integer[] STLL;
-    private static Integer[] WAITINGTIME;
-    private static Integer[] PERCENTAGE;
+    private static Long[] PERCENTAGE;
+    private static Long[] STA;
+    private static Long[] STS;
+    private static Long[] STLL;
+    private static Long[] WAITINGTIME;
+
+
+
 
 
 
@@ -30,21 +38,24 @@ public class Simulacion {
 
         TPS          = new Integer[N];
         lines        = new Integer[N];
-        STA          = new Integer[N];
-        STS          = new Integer[N];
-        STLL         = new Integer[N];
-        WAITINGTIME  = new Integer[N];
-        PERCENTAGE   = new Integer[N];
+        STA          = new Long[N];
+        STS          = new Long[N];
+        STLL         = new Long[N];
+        WAITINGTIME  = new Long[N];
+        PERCENTAGE   = new Long[N];
         NTLine       = new Integer[N];
+        NTLineMin    = new Double[N];
+        NTLineMax    = new Double[N];
 
-        inicializar(TPS,-1);
-        inicializar(lines,0);
-        inicializar(STA,0);
-        inicializar(STS,0);
-        inicializar(STLL,0);
-        inicializar(WAITINGTIME,0);
-        inicializar(NTLine,0);
-        inicializar(PERCENTAGE, 0);
+        initialize(TPS,-1);
+        initialize(lines,0);
+        initialize(NTLine,0);
+        initializeLong(PERCENTAGE, 0);
+        initializeLong(STA,0);
+        initializeLong(STS,0);
+        initializeLong(STLL,0);
+        initializeLong(WAITINGTIME,0);
+        initializeNTLineMax();
 
 
 
@@ -55,7 +66,7 @@ public class Simulacion {
 
 
         while(T<TF) {
-            simulacion();
+            simulation();
         }
 
 
@@ -70,7 +81,15 @@ public class Simulacion {
 
     }
 
-    private static void simulacion() {
+
+
+
+    ///////////////////////////////////////////// FUNCTIONS ////////////////////////////////////////////////////////////
+
+
+
+
+    private static void simulation() {
         Integer minTps = minTPS();
         Integer minTpsIndex = minTPSIndex(minTps);
 
@@ -85,7 +104,8 @@ public class Simulacion {
             T = TPT;
             Integer NA = 864000/Integer.valueOf(String.valueOf(nextArrival(random())).substring(0,6));
             TPT = T + NA;
-            Integer linePosition = Integer.valueOf(String.valueOf(linesPosition()).substring(0, 1));
+            //Integer linePosition = Integer.valueOf(String.valueOf(linesPosition()).substring(0, 1));
+            Integer linePosition = linesPosition();
 
             if(linePosition >= N) {
                 linePosition = 0;
@@ -196,6 +216,7 @@ public class Simulacion {
 
     }
 
+    /*
     private static double linesPosition() {
 
         Integer rangeMin = 0;
@@ -208,6 +229,17 @@ public class Simulacion {
 
         return ThreadLocalRandom.current().nextDouble(rangeMin, rangeMax);
     }
+
+    */
+
+    private static Integer linesPosition(){
+       Double probability =  ThreadLocalRandom.current().nextDouble(0, 5);
+
+
+       return (lineDistribution(probability));
+
+    }
+
 
     private static Integer minTPS() {
 
@@ -243,24 +275,69 @@ public class Simulacion {
 
         // Calculate the results, average of waiting team for each line
         for (int i = 0; i < lines.length; i++)
-            WAITINGTIME[i] = (STS[i]-STLL[i]-STA[i])/NTLine[i];
+            if(NTLine[i]!=0) {
+                WAITINGTIME[i] = (STS[i] - STLL[i] - STA[i]) / NTLine[i];
+            }else{
+                WAITINGTIME[i] = Long.valueOf(0);
+            }
 
         // Calculate the results, percentage of processed transactions in that line on total transactions.
-        for (int i = 0; i < lines.length; i++)
-            PERCENTAGE[i] = (NTLine[i]*100)/NTLineTotal;
+        for (int i = 0; i < lines.length; i++) {
+            PERCENTAGE[i] = (Long.valueOf(NTLine[i] * 100)) / NTLineTotal;
+        }
 
         for (int i = 0; i < lines.length; i++) {
-            System.out.println("Tiempo de espera en la cola:" + i +" = "  + WAITINGTIME[i] + "\n" + "porcentaje de transacciones en " +
-                    "la linea " + i + " respecto al total: " + PERCENTAGE[i] );
+            System.out.println("Waiting time in the line:" + (i+1) +" = "  + WAITINGTIME[i] + "\n" + "percentage of transactions in " +
+                    "the line " + (i+1) + " of the total: " + PERCENTAGE[i] );
 
         }
     }
 
 
-    public static void inicializar(Integer[] lista,int valorInicial){
+    public static void initialize(Integer[] lista,int valorInicial){
         for (int i = 0; i < lista.length; i++){
             lista[i] = valorInicial;
         }
     }
 
+    public static void initializeLong(Long[] lista, Integer valorInicial){
+        for (int i = 0; i< lista .length; i++){
+            lista[i] = Long.valueOf(valorInicial);
+        }
+    }
+
+    //IN BITS PER BYTE
+
+    public static void initializeNTLineMax(){
+
+
+        Double x = 5.00 /N;
+
+        for (int i = 0; i < NTLineMin.length; i++){
+            NTLineMax[i] = x*(i+1);
+        }
+        initializeNTLineMin();
+
+    }
+
+    public static void initializeNTLineMin(){
+        int i;
+        Double x = 5.00 /N;
+        for (i = 0; i < NTLineMin.length; i++) {
+            NTLineMin[i] = x * i;
+            System.out.println("NTLineMin = " + NTLineMin[i] + " NTLineMax[" + i + "] =  " + NTLineMax[i]);
+        }
+    }
+
+    public static int lineDistribution(Double value){
+        int j=0;
+        for (int i = 0;i<N;i++){
+            if(NTLineMin[i] < value && value < NTLineMax[i]) {
+                j = i;
+            }
+
+        }
+        System.out.println("value =" + value + " j=" + j);
+        return j;
+    }
 }

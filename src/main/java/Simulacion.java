@@ -329,6 +329,35 @@ public class Simulacion {
         }
     }
 
+    public static Double bitcoinDistribution(Double random){
+
+        if (random <= 49.01126709){
+            return ThreadLocalRandom.current().nextDouble(0.001, 0.01);
+        }else if(random <= 49.01126709 + 22.85238066){
+            return ThreadLocalRandom.current().nextDouble(0.01, 0.1);
+        }else if (random <=  49.01126709 + 22.85238066 + 17.23819381){
+            return ThreadLocalRandom.current().nextDouble(0.1, 1);
+        }else if (random <= 49.01126709 + 22.85238066 + 17.23819381 + 7.686242931 ){
+            return ThreadLocalRandom.current().nextDouble(1, 3);
+        }else if (random <= 49.01126709 + 22.85238066 + 17.23819381 + 7.686242931 + 2.535713917){
+            return ThreadLocalRandom.current().nextDouble(1, 5);
+        }else if(random <= 49.01126709 + 22.85238066 + 17.23819381 + 7.686242931 + 2.535713917+ 0.5973369618){
+            return ThreadLocalRandom.current().nextDouble(1, 5);
+        }else if(random <= 49.01126709 + 22.85238066 + 17.23819381 + 7.686242931 + 2.535713917+ 0.5973369618 + 0.07137256447){
+            return ThreadLocalRandom.current().nextDouble(2, 5);
+        }else if(random <= 49.01126709 + 22.85238066 + 17.23819381 + 7.686242931 + 2.535713917+ 0.5973369618 + 0.07137256447+0.006991690987){
+            return ThreadLocalRandom.current().nextDouble(3, 5);
+        }else if(random <= 49.01126709 + 22.85238066 + 17.23819381 + 7.686242931 + 2.535713917+ 0.5973369618 + 0.07137256447+0.006991690987+ 0.0004867345059) {
+            return ThreadLocalRandom.current().nextDouble(4, 5);
+        }
+
+
+        return ( ThreadLocalRandom.current().nextDouble(4.5, 5));
+    }
+
+
+
+
     public static int lineDistribution(Double value){
         int j=0;
         for (int i = 0;i<N;i++){
@@ -337,7 +366,7 @@ public class Simulacion {
             }
 
         }
-        System.out.println("value =" + value + " j=" + j);
+        //System.out.println("value =" + value + " j=" + j);
         return j;
     }
 }

@@ -1,3 +1,7 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.Period;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collector;
@@ -30,7 +34,7 @@ public class Simulacion {
 
 
 
-    public static void main (String[] args) {
+    public static void main (String[] args) throws IOException {
         System.out.println("Ingrese cantidad de colas: ");
         Scanner inputColas = new Scanner( System.in );
 
@@ -78,6 +82,7 @@ public class Simulacion {
         }
 
         printAnswer();
+
 
     }
 
@@ -269,7 +274,11 @@ public class Simulacion {
         return index ;
     }
 
-    public static void printAnswer(){
+    public static void printAnswer() throws IOException {
+
+        BufferedWriter writer = new BufferedWriter(new FileWriter("/home/matias/Escritorio/BitcoinLinesTest.xls"));
+
+
 
         Integer NTLineTotal = Arrays.asList(NTLine).stream().mapToInt(Integer::intValue).sum();
 
@@ -285,12 +294,15 @@ public class Simulacion {
         for (int i = 0; i < lines.length; i++) {
             PERCENTAGE[i] = (Long.valueOf(NTLine[i] * 100)) / NTLineTotal;
         }
-
+        writer.write("i "+"\t"+"WAITINGTIME[i]"+"\t"+"PERCENTAGE[i]"+"\n");
         for (int i = 0; i < lines.length; i++) {
-            System.out.println("Waiting time in the line:" + (i+1) +" = "  + WAITINGTIME[i] + "\n" + "percentage of transactions in " +
-                    "the line " + (i+1) + " of the total: " + PERCENTAGE[i] );
-
+            System.out.println("Waiting time in the line:" + (i + 1) + " = " + WAITINGTIME[i] + "\n" + "percentage of transactions in " +
+                    "the line " + (i + 1) + " of the total: " + PERCENTAGE[i]);
+            writer.write((i+1)+"\t"+String.valueOf(WAITINGTIME[i])+"\t"+PERCENTAGE[i]+"\n");
         }
+
+
+        writer.close();
     }
 
 
@@ -350,7 +362,6 @@ public class Simulacion {
         }else if(random <= 49.01126709 + 22.85238066 + 17.23819381 + 7.686242931 + 2.535713917+ 0.5973369618 + 0.07137256447+0.006991690987+ 0.0004867345059) {
             return ThreadLocalRandom.current().nextDouble(4, 5);
         }
-
 
         return ( ThreadLocalRandom.current().nextDouble(4.5, 5));
     }

@@ -3,23 +3,19 @@ package app;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.crypto.dom.DOMCryptoContext;
 import java.io.BufferedWriter;
-import java.io.CharArrayReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.Period;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Simulacion {
 
 
     /////////////GLOBAL VAR////////////////
 
+    private static Boolean bc_available = true;
     private static Integer N = 0;
     private static Integer M = 0;
     private static Integer I = 0;
@@ -31,7 +27,7 @@ public class Simulacion {
     private static Double[] NTLineMin;
     private static Integer[] NTLine;
     private static Double[] TPS;
-    private static Integer[] lines;
+    private static Integer[] queues;
     private static Double[] PERCENTAGE;
     private static Double[] STA;
     private static Double[] STS;
@@ -58,7 +54,7 @@ public class Simulacion {
             N = Integer.valueOf(inputLines.nextLine());
 
             TPS = new Double[N];
-            lines = new Integer[N];
+            queues = new Integer[N];
             STA = new Double[N];
             STS = new Double[N];
             STLL = new Double[N];
@@ -69,7 +65,7 @@ public class Simulacion {
             NTLineMax = new Double[N];
 
             initializeDouble(TPS, -1D);
-            initialize(lines, 0);
+            initialize(queues, 0);
             initialize(NTLine, 0);
             initializeDouble(PERCENTAGE, 0D);
             initializeDouble(STA, 0D);
@@ -89,11 +85,10 @@ public class Simulacion {
                 simulation();
             }
 
-
             //Getting the system empty
 
-            for (int i = 0; i < lines.length; i++) {
-                if (!(lines[i] == 0)) {
+            for (int i = 0; i < queues.length; i++) {
+                if (queues[i] != 0) {
                     TPT = -1D;
                     empty();
                 }
@@ -107,51 +102,17 @@ public class Simulacion {
 
     }
 
-
-
-
     ///////////////////////////////////////////// AUXILIAR METHODS ////////////////////////////////////////////////////////////
-
-
 
 
     private static void simulation() {
         Double minTps = minTPS();
         Integer minTpsIndex = minTPSIndex(minTps);
 
-        if (((TPT >= minTps) && (TPT == -1D)) && (minTps >= 0)) {
-            T = T + minTps;
-            lines[minTpsIndex] = lines[minTpsIndex] - 1;
-            processExit(minTpsIndex);
-            NTLine[minTpsIndex] = NTLine[minTpsIndex] + 1;
-            STS[minTpsIndex] = STS[minTpsIndex] + T;
-
+        if ((TPT >= minTps) && (TPT == -1D) && (minTps >= 0)) {
+            processExit(minTps, minTpsIndex);
         } else {
-            T = TPT;
-            TPT = T+NA ;
-            Integer linePosition = linesPosition();
-
-            if(linePosition >= N) {
-                linePosition = 0;
-            }
-
-            lines[linePosition] = lines[linePosition] + 1;
-
-            Boolean previousEmpty = arePreviousEmpty(linePosition);
-
-            if (!(lines[linePosition] > 1)) {
-                if (previousEmpty) {
-                    makeNextHV(linePosition);
-                    Double TA = attentionTime(linePosition);
-                    TPS[linePosition] = T + TA;
-                    STA[linePosition] = STA[linePosition] + TA;
-                    STLL[linePosition] = STLL[linePosition] + TPT;
-                } else {
-                    STLL[linePosition] = STLL[linePosition] + TPT;
-                }
-            } else {
-                STLL[linePosition] = STLL[linePosition] + T;
-            }
+            processArrival();
         }
     }
 
@@ -163,96 +124,123 @@ public class Simulacion {
 
         T = T + minTps;
 
-        for(int x=0; x<lines.length; x++){
-            while(lines[x]>0){
-                lines[x] = lines[x] - 1;
-                processFinalExit(x);
+        for(int x = 0; x< queues.length; x++){
+            while(queues[x]>0){
+                queues[x] = queues[x] - 1;
+                processEmptyingExit(x);
                 NTLine[x] = NTLine[x] + 1;
                 STS[x] = STS[x] + T;
             }
         }
-
-
-
     }
 
-    ////// ATTENTION TIME, WITH THIS METHOD THE LOWER NUMBER HAVE PRIORITY
+    ////////////////////////////////////////// ARRIVAL AND EXITS /////////////////////////////////////////////////////////////
 
-    private static Double attentionTime(int line) {
-        Double rangeMax;
-        Double rangeMin = 0D;
-        if (line != 0) {
-            rangeMax = 1200D - 600D/line;
-        }else{
-            rangeMax = 300D;
+    private static void processArrival() {
+
+        T = TPT;
+        TPT = T+NA ;
+
+        Integer queuePosition = queuePosition();
+
+        if(queuePosition >= N) {
+            queuePosition = 0;
         }
-        return ThreadLocalRandom.current().nextDouble(rangeMin, rangeMax);
+
+        queues[queuePosition] = queues[queuePosition] + 1;
+
+        Boolean previousEmpty = arePreviousEmpty(queuePosition);
+
+        if (queues[queuePosition] == 0 && bc_available) {
+            if (previousEmpty) {
+                bc_available = false;
+                makeNextHV(queuePosition);
+                Double TA = attentionTime(queuePosition);
+                TPS[queuePosition] = T + TA;
+                STA[queuePosition] = STA[queuePosition] + TA;
+                STLL[queuePosition] = STLL[queuePosition] + TPT;
+            } else {
+                STLL[queuePosition] = STLL[queuePosition] + TPT;
+            }
+        } else {
+            STLL[queuePosition] = STLL[queuePosition] + T;
+        }
+
     }
 
-    private static void processExit(Integer index) {
+    private static void processExit(Double minTps, Integer minTpsIndex) {
+        T = T + minTps;
+        queues[minTpsIndex] = queues[minTpsIndex] - 1;
 
-        if(lines[index] >= 1) {
-            Double TA =attentionTime(index);
-            TPS[index] = T + TA;
-            STA[index] = STA[index] + TA;
+        if(queues[minTpsIndex] >= 1) {
+            Double TA =attentionTime(minTpsIndex);
+            TPS[minTpsIndex] = T + TA;
+            STA[minTpsIndex] = STA[minTpsIndex] + TA;
 
         } else {
-            boolean flag = true;
-            TPS[index] = -1D;
-            for (int x = 0; x<lines.length && flag; x++){
-                if (lines[x]>=0){
-                    Double TA = attentionTime(x);
-                    TPS[x] = T + TA;
-                    STA[x] = STA[x] + TA;
-                    flag = false;
-
-                }
-            }
+            nextExitToProcess(minTpsIndex);
         }
 
+        NTLine[minTpsIndex] = NTLine[minTpsIndex] + 1;
+        STS[minTpsIndex] = STS[minTpsIndex] + T;
+        bc_available = true;
+    }
+
+
+    private static void processEmptyingExit(Integer index) {
+
+        if(queues[index] >= 1) {
+            Double TA =attentionTime(index);
+            T = T+TA;
+            TPS[index] = T + TA;
+            STA[index] = STA[index] + TA;
+        } else {
+            nextExitToProcess(index);
+        }
+    }
+
+    private static void nextExitToProcess(Integer minTpsIndex) {
+
+        boolean queueNotEmpty = true;
+        TPS[minTpsIndex] = -1D;
+
+        for (int x = 0; x < queues.length && queueNotEmpty; x++){
+            if (queues[x]>=0){
+                Double TA = attentionTime(x);
+                TPS[x] = T + TA;
+                STA[x] = STA[x] + TA;
+                queueNotEmpty = false;
+
+            }
+        }
+    }
+
+    //////////////////////////////////////////// INIT METHODS ///////////////////////////////////////////////////////////////
+
+    private static void initialize(Integer[] lista,int valorInicial){
+        for (int i = 0; i < lista.length; i++){
+            lista[i] = valorInicial;
+        }
+    }
+
+    private static void initializeDouble(Double[] lista, Double valorInicial){
+        for (int i = 0; i< lista .length; i++){
+            lista[i] = valorInicial;
+        }
     }
 
     private static boolean arePreviousEmpty(Integer index) {
         for(Integer i = index-1 ; i >= 0 ; i--) {
-            if(!lines[i].equals(0)) return false;
+            if(!queues[i].equals(0)) return false;
         }
         return true;
     }
 
     private static void makeNextHV(Integer index) {
-        for(Integer i = index + 1; i < lines.length; i++) {
-            lines[i] = HV;
+        for(Integer i = index + 1; i < queues.length; i++) {
+            queues[i] = HV;
         }
     }
-
-    private static double dailyArrival(double r) {
-        double sigma = 106540;
-        double mu = 128800;
-
-        if(r > 0.9968724239) {
-            dailyArrival(random());
-        }
-
-        return sigma * Math.sqrt(-2 * Math.log(1-r)) + mu;
-    }
-
-    private static double random() {
-
-            int rangeMin = 0;
-            int rangeMax = 1;
-
-            return ThreadLocalRandom.current().nextDouble(rangeMin, rangeMax);
-
-    }
-
-    private static Integer linesPosition(){
-       Double probability =  ThreadLocalRandom.current().nextDouble(0, 1);
-
-
-       return (lineDistribution(bitcoinDistribution(probability*100)));
-
-    }
-
 
     private static Double minTPS() {
 
@@ -284,13 +272,10 @@ public class Simulacion {
 
     public static void printAnswer() throws IOException {
 
-
-
-
         Integer NTLineTotal = Arrays.asList(NTLine).stream().mapToInt(Integer::intValue).sum();
 
         // Calculate the results, average of waiting team for each line
-        for (int i = 0; i < lines.length; i++)
+        for (int i = 0; i < queues.length; i++)
             if(NTLine[i]!=0) {
                 WAITINGTIME[i] = (STS[i] - STLL[i] - STA[i]) / (NTLine[i]*600);
             }else{
@@ -298,9 +283,8 @@ public class Simulacion {
             }
 
         writer.write("i "+"\t"+"WAITINGTIME[i]"+"\t"+"PERCENTAGE[i]"+"\n");
-
         // Calculate the results, percentage of processed transactions in that line on total transactions.
-        for (int i = 0; i < lines.length; i++) {
+        for (int i = 0; i < queues.length; i++) {
             if (NTLineTotal != 0){
                 PERCENTAGE[i] = (Double.valueOf(NTLine[i])*100) / NTLineTotal;
                 PERCENTAGE[i] = PERCENTAGE[i] * 100 / 100;
@@ -310,7 +294,7 @@ public class Simulacion {
             writer.write((i+1)+"\t"+String.valueOf(WAITINGTIME[i])+"\t"+PERCENTAGE[i]+"\n");
         }
             LOGGER.info("SIMULATION NUMBER: " + I + " | LINES: "+ N + " | FINAL TIME: "+ TF );
-        for (int i = 0; i < lines.length; i++) {
+        for (int i = 0; i < queues.length; i++) {
             LOGGER.info("Waiting time in the line:" + (i + 1) + " = " + WAITINGTIME[i] + "\n" + "Percentage of transactions in " +
                     "the line " + (i + 1) + " of the total: " +PERCENTAGE[i]);
         }
@@ -318,65 +302,53 @@ public class Simulacion {
     }
 
 
-    public static void initialize(Integer[] lista,int valorInicial){
-        for (int i = 0; i < lista.length; i++){
-            lista[i] = valorInicial;
+    ///////////////////////////// TIME TO PROCESS TRANSACTION SIMULATION ////////////////////////////////////////////////////
+
+    private static Double attentionTime(int line) {
+        Double rangeMax;
+        Double rangeMin = 0D;
+        if (line != 0) {
+            rangeMax = 1200D - 600D/line;
+        }else{
+            rangeMax = 300D;
         }
+        return ThreadLocalRandom.current().nextDouble(rangeMin, rangeMax);
     }
 
-    public static void initializeDouble(Double[] lista, Double valorInicial){
-        for (int i = 0; i< lista .length; i++){
-            lista[i] = valorInicial;
+
+    ///////////////////////////// ARRIVALS TO QUEUES SIMULATION /////////////////////////////////////////////////////////////
+
+    private static double dailyArrival(double r) {
+        double sigma = 106540;
+        double mu = 128800;
+
+        if(r > 0.9968724239) {
+            dailyArrival(random());
         }
+
+        return sigma * Math.sqrt(-2 * Math.log(1-r)) + mu;
     }
 
+    private static double random() {
 
-    //IN BITS PER BYTE
+        int rangeMin = 0;
+        int rangeMax = 1;
 
-    public static void initializeNTLineMax(){
-
-
-        Double x = 5D /N;
-
-        for (int i = 0; i < NTLineMin.length; i++){
-            NTLineMax[i] = 5D - x*i;
-        }
-        initializeNTLineMin();
+        return ThreadLocalRandom.current().nextDouble(rangeMin, rangeMax);
 
     }
 
-    public static void initializeNTLineMin(){
-        int i;
-        Double x = 5D /N;
-        for (i = 0; i < NTLineMin.length; i++) {
-            NTLineMin[i] = 5D -  x * (i+1);
-        }
+    ///////////////////////////// FEES AND QUEUES DISTRIBUTION SIMULATION ///////////////////////////////////////////////////
+
+
+    private static Integer queuePosition(){
+        Double probability =  ThreadLocalRandom.current().nextDouble(0, 1);
+
+        return (queueDistribution(bitcoinDistribution(probability*100)));
+
     }
 
-    private static void processFinalExit(Integer index) {
-
-                        if(lines[index] >= 1) {
-                        Double TA =attentionTime(index);
-                        T = T+TA;
-                        TPS[index] = T + TA;
-                        STA[index] = STA[index] + TA;
-
-                            } else {
-                        boolean flag = true;
-                        TPS[index] = -1D;
-                        for (int x = 0; x < lines.length && flag; x++){
-                                if (lines[x]>=0){
-                                        Double TA = attentionTime(index);
-                                        TPS[x] = T + TA;
-                                        STA[x] = STA[x] + TA;
-                                        flag = false;
-
-                                            }
-                            }
-                    }
-                    }
-
-    public static Double bitcoinDistribution(Double random){
+    private static Double bitcoinDistribution(Double random){
 
         if (random <= 49.01126709){
             return ThreadLocalRandom.current().nextDouble(0, 1);
@@ -402,7 +374,7 @@ public class Simulacion {
 
     }
 
-    public static int lineDistribution(Double value){
+    private static int queueDistribution(Double value){
 
         int j=0;
         for (int i = 0;i<N;i++){
@@ -412,5 +384,25 @@ public class Simulacion {
 
         }
         return j;
+    }
+
+    private static void initializeNTLineMax(){
+
+
+        Double x = 5D /N;
+
+        for (int i = 0; i < NTLineMin.length; i++){
+            NTLineMax[i] = 5D - x*i;
+        }
+        initializeNTLineMin();
+
+    }
+
+    private static void initializeNTLineMin(){
+        int i;
+        Double x = 5D /N;
+        for (i = 0; i < NTLineMin.length; i++) {
+            NTLineMin[i] = 5D -  x * (i+1);
+        }
     }
 }

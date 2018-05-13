@@ -33,6 +33,8 @@ public class Simulacion {
     private static Double[] STS;
     private static Double[] STLL;
     private static Double[] WAITINGTIME;
+    private static Double[] TIMEFREE;
+    private static Double[] ITF;
     private static Integer NA = 864000/Integer.valueOf(String.valueOf(dailyArrival(random())).substring(0,6));
     private static final Logger LOGGER = LoggerFactory.getLogger(Simulacion.class);
     private static BufferedWriter writer;
@@ -63,6 +65,9 @@ public class Simulacion {
             NTLine = new Integer[N];
             NTLineMin = new Double[N];
             NTLineMax = new Double[N];
+            TIMEFREE  = new Double[N];
+            ITF       = new Double[N];
+
 
             initializeDouble(TPS, -1D);
             initialize(queues, 0);
@@ -72,6 +77,8 @@ public class Simulacion {
             initializeDouble(STS, 0D);
             initializeDouble(STLL, 0D);
             initializeDouble(WAITINGTIME, 0D);
+            initializeDouble(TIMEFREE,0D);
+            initializeDouble(ITF,0D);
             initializeNTLineMax();
 
 
@@ -151,7 +158,7 @@ public class Simulacion {
 
         Boolean previousEmpty = arePreviousEmpty(queuePosition);
 
-        if (queues[queuePosition] == 0 && bc_available) {
+        if (queues[queuePosition] == 1 && bc_available) {
             if (previousEmpty) {
                 bc_available = false;
                 makeNextHV(queuePosition);
@@ -166,6 +173,10 @@ public class Simulacion {
             STLL[queuePosition] = STLL[queuePosition] + T;
         }
 
+        if (queues[queuePosition]== 1){
+            TIMEFREE[queuePosition]+= (T-ITF[queuePosition]);
+        }
+
     }
 
     private static void processExit(Double minTps, Integer minTpsIndex) {
@@ -178,6 +189,9 @@ public class Simulacion {
             STA[minTpsIndex] = STA[minTpsIndex] + TA;
 
         } else {
+            if (queues[minTpsIndex]>0){
+                ITF[minTpsIndex]=T;
+            }
             nextExitToProcess(minTpsIndex);
         }
 
@@ -282,7 +296,7 @@ public class Simulacion {
                 WAITINGTIME[i] = 0D;
             }
 
-        writer.write("i "+"\t"+"WAITINGTIME[i]"+"\t"+"PERCENTAGE[i]"+"\n");
+        writer.write("i "+"\t"+"WAITINGTIME[i]"+"\t"+"PERCENTAGE OF TRANSACTIONS[i]"+"\t"+"PERCENTAGE OF TIME FREE[i]"+"\n");
         // Calculate the results, percentage of processed transactions in that line on total transactions.
         for (int i = 0; i < queues.length; i++) {
             if (NTLineTotal != 0){
@@ -291,12 +305,12 @@ public class Simulacion {
             }else{
                 PERCENTAGE[i] = null;
             }
-            writer.write((i+1)+"\t"+String.valueOf(WAITINGTIME[i])+"\t"+PERCENTAGE[i]+"\n");
+            writer.write((i+1)+"\t"+String.valueOf(WAITINGTIME[i])+"\t"+PERCENTAGE[i]+"\t"+TIMEFREE[i]/T +"\n");
         }
             LOGGER.info("SIMULATION NUMBER: " + I + " | LINES: "+ N + " | FINAL TIME: "+ TF );
         for (int i = 0; i < queues.length; i++) {
             LOGGER.info("Waiting time in the line:" + (i + 1) + " = " + WAITINGTIME[i] + "\n" + "Percentage of transactions in " +
-                    "the line " + (i + 1) + " of the total: " +PERCENTAGE[i]);
+                    "the line " + (i + 1) + " of the total: " +PERCENTAGE[i] + "Percentaje of time Free [i]" + TIMEFREE[i]/T);
         }
 
     }
@@ -304,14 +318,22 @@ public class Simulacion {
 
     ///////////////////////////// TIME TO PROCESS TRANSACTION SIMULATION ////////////////////////////////////////////////////
 
+    /*
     private static Double attentionTime(int line) {
-        Double rangeMax;
+        Double rangeMax = ;
         Double rangeMin = 0D;
         if (line != 0) {
             rangeMax = 1200D - 600D/line;
         }else{
             rangeMax = 300D;
         }
+        return ThreadLocalRandom.current().nextDouble(rangeMin, rangeMax);
+    }*/
+
+    private static Double attentionTime(int line){
+        Double rangeMax = 600D;
+        Double rangeMin = 0D;
+
         return ThreadLocalRandom.current().nextDouble(rangeMin, rangeMax);
     }
 

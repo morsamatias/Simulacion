@@ -28,13 +28,11 @@ public class Simulacion {
     private static Integer[] NTLine;
     private static Double[] TPS;
     private static Integer[] queues;
-    private static Double[] PERCENTAGE;
+    private static Double[] POF;
     private static Double[] STA;
     private static Double[] STS;
     private static Double[] STLL;
     private static Double[] WAITINGTIME;
-    private static Double[] TIMEFREE;
-    private static Double[] ITF;
     private static Integer NA = 864000/Integer.valueOf(String.valueOf(dailyArrival(random())).substring(0,6));
     private static final Logger LOGGER = LoggerFactory.getLogger(Simulacion.class);
     private static BufferedWriter writer;
@@ -61,24 +59,21 @@ public class Simulacion {
             STS = new Double[N];
             STLL = new Double[N];
             WAITINGTIME = new Double[N];
-            PERCENTAGE = new Double[N];
+            POF = new Double[N];
             NTLine = new Integer[N];
             NTLineMin = new Double[N];
             NTLineMax = new Double[N];
-            TIMEFREE  = new Double[N];
-            ITF       = new Double[N];
+
 
 
             initializeDouble(TPS, -1D);
             initialize(queues, 0);
             initialize(NTLine, 0);
-            initializeDouble(PERCENTAGE, 0D);
+            initializeDouble(POF, 0D);
             initializeDouble(STA, 0D);
             initializeDouble(STS, 0D);
             initializeDouble(STLL, 0D);
             initializeDouble(WAITINGTIME, 0D);
-            initializeDouble(TIMEFREE,0D);
-            initializeDouble(ITF,0D);
             initializeNTLineMax();
 
 
@@ -173,9 +168,6 @@ public class Simulacion {
             STLL[queuePosition] = STLL[queuePosition] + T;
         }
 
-        if (queues[queuePosition]== 1){
-            TIMEFREE[queuePosition]+= (T-ITF[queuePosition]);
-        }
 
     }
 
@@ -189,9 +181,6 @@ public class Simulacion {
             STA[minTpsIndex] = STA[minTpsIndex] + TA;
 
         } else {
-            if (queues[minTpsIndex]>0){
-                ITF[minTpsIndex]=T;
-            }
             nextExitToProcess(minTpsIndex);
         }
 
@@ -296,21 +285,21 @@ public class Simulacion {
                 WAITINGTIME[i] = 0D;
             }
 
-        writer.write("i "+"\t"+"WAITINGTIME[i]"+"\t"+"PERCENTAGE OF TRANSACTIONS[i]"+"\t"+"PERCENTAGE OF TIME FREE[i]"+"\n");
+        writer.write("line: "+"\t"+"WAITINGTIME[i]"+"\t"+"% OF TRANSACTIONS[i]"+"\n");
         // Calculate the results, percentage of processed transactions in that line on total transactions.
         for (int i = 0; i < queues.length; i++) {
             if (NTLineTotal != 0){
-                PERCENTAGE[i] = (Double.valueOf(NTLine[i])*100) / NTLineTotal;
-                PERCENTAGE[i] = PERCENTAGE[i] * 100 / 100;
+                POF[i] = (Double.valueOf(NTLine[i])*100) / NTLineTotal;
+                POF[i] = POF[i] * 100 / 100;
             }else{
-                PERCENTAGE[i] = null;
+                POF[i] = null;
             }
-            writer.write((i+1)+"\t"+String.valueOf(WAITINGTIME[i])+"\t"+PERCENTAGE[i]+"\t"+TIMEFREE[i]/T +"\n");
+            writer.write((i+1)+"\t"+String.valueOf(WAITINGTIME[i])+"\t"+ POF[i]+"\n");
         }
             LOGGER.info("SIMULATION NUMBER: " + I + " | LINES: "+ N + " | FINAL TIME: "+ TF );
         for (int i = 0; i < queues.length; i++) {
             LOGGER.info("Waiting time in the line:" + (i + 1) + " = " + WAITINGTIME[i] + "\n" + "Percentage of transactions in " +
-                    "the line " + (i + 1) + " of the total: " +PERCENTAGE[i] + "Percentaje of time Free [i]" + TIMEFREE[i]/T);
+                    "the line " + (i + 1) + " of the total: " + POF[i] );
         }
 
     }

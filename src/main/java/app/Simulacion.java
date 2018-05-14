@@ -15,7 +15,7 @@ public class Simulacion {
 
     /////////////GLOBAL VAR////////////////
 
-    private static Boolean bc_available = true;
+    private static Boolean bc_available;
     private static Integer N = 0;
     private static Integer M = 0;
     private static Integer I = 0;
@@ -28,16 +28,18 @@ public class Simulacion {
     private static Integer[] NTLine;
     private static Double[] TPS;
     private static Integer[] queues;
-    private static Double[] POF;
+    private static Double[] POT;
     private static Double[] STA;
     private static Double[] STS;
     private static Double[] STLL;
     private static Double[] WAITINGTIME;
+    private static Double[] FREETIME;
     private static Integer NA = 864000/Integer.valueOf(String.valueOf(dailyArrival(random())).substring(0,6));
     private static final Logger LOGGER = LoggerFactory.getLogger(Simulacion.class);
     private static BufferedWriter writer;
 
     public static void main (String[] args) throws IOException {
+
 
         System.out.println("Enter number of simulations to run: ");
 
@@ -48,6 +50,9 @@ public class Simulacion {
 
         while (I < M) {
             T = 0D;
+            bc_available = true;
+            TPT = 0D;
+
             System.out.println("Enter number of queues: ");
             Scanner inputLines = new Scanner(System.in);
 
@@ -59,7 +64,7 @@ public class Simulacion {
             STS = new Double[N];
             STLL = new Double[N];
             WAITINGTIME = new Double[N];
-            POF = new Double[N];
+            POT = new Double[N];
             NTLine = new Integer[N];
             NTLineMin = new Double[N];
             NTLineMax = new Double[N];
@@ -69,7 +74,7 @@ public class Simulacion {
             initializeDouble(TPS, -1D);
             initialize(queues, 0);
             initialize(NTLine, 0);
-            initializeDouble(POF, 0D);
+            initializeDouble(POT, 0D);
             initializeDouble(STA, 0D);
             initializeDouble(STS, 0D);
             initializeDouble(STLL, 0D);
@@ -111,7 +116,7 @@ public class Simulacion {
         Double minTps = minTPS();
         Integer minTpsIndex = minTPSIndex(minTps);
 
-        if ((TPT >= minTps) && (TPT == -1D) && (minTps >= 0)) {
+        if ( (TPT == -1D) || ((TPT >= minTps) && (minTps >= 0))) {
             processExit(minTps, minTpsIndex);
         } else {
             processArrival();
@@ -172,6 +177,7 @@ public class Simulacion {
     }
 
     private static void processExit(Double minTps, Integer minTpsIndex) {
+        bc_available = true;
         T = T + minTps;
         queues[minTpsIndex] = queues[minTpsIndex] - 1;
 
@@ -186,7 +192,6 @@ public class Simulacion {
 
         NTLine[minTpsIndex] = NTLine[minTpsIndex] + 1;
         STS[minTpsIndex] = STS[minTpsIndex] + T;
-        bc_available = true;
     }
 
 
@@ -213,7 +218,7 @@ public class Simulacion {
                 TPS[x] = T + TA;
                 STA[x] = STA[x] + TA;
                 queueNotEmpty = false;
-
+                bc_available = false;
             }
         }
     }
@@ -289,17 +294,17 @@ public class Simulacion {
         // Calculate the results, percentage of processed transactions in that line on total transactions.
         for (int i = 0; i < queues.length; i++) {
             if (NTLineTotal != 0){
-                POF[i] = (Double.valueOf(NTLine[i])*100) / NTLineTotal;
-                POF[i] = POF[i] * 100 / 100;
+                POT[i] = (Double.valueOf(NTLine[i])*100) / NTLineTotal;
+                POT[i] = POT[i] * 100 / 100;
             }else{
-                POF[i] = null;
+                POT[i] = null;
             }
-            writer.write((i+1)+"\t"+String.valueOf(WAITINGTIME[i])+"\t"+ POF[i]+"\n");
+            writer.write((i+1)+"\t"+String.valueOf(WAITINGTIME[i])+"\t"+ POT[i]+"\n");
         }
             LOGGER.info("SIMULATION NUMBER: " + I + " | LINES: "+ N + " | FINAL TIME: "+ TF );
         for (int i = 0; i < queues.length; i++) {
             LOGGER.info("Waiting time in the line:" + (i + 1) + " = " + WAITINGTIME[i] + "\n" + "Percentage of transactions in " +
-                    "the line " + (i + 1) + " of the total: " + POF[i] );
+                    "the line " + (i + 1) + " of the total: " + POT[i] );
         }
 
     }
@@ -320,7 +325,7 @@ public class Simulacion {
     }*/
 
     private static Double attentionTime(int line){
-        Double rangeMax = 600D;
+        Double rangeMax = 6000D;
         Double rangeMin = 0D;
 
         return ThreadLocalRandom.current().nextDouble(rangeMin, rangeMax);

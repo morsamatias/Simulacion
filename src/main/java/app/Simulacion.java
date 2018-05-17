@@ -34,7 +34,7 @@ public class Simulacion {
     private static Double[] STLL;
     private static Double[] WAITINGTIME;
     private static Double[] FREETIME;
-    private static Integer NA = 864000/Integer.valueOf(String.valueOf(dailyArrival(random())).substring(0,6));
+    private static Integer NA = dailyArrival();
     private static final Logger LOGGER = LoggerFactory.getLogger(Simulacion.class);
     private static BufferedWriter writer;
 
@@ -162,7 +162,7 @@ public class Simulacion {
             if (previousEmpty) {
                 bc_available = false;
                 makeNextHV(queuePosition);
-                Double TA = attentionTime(queuePosition);
+                Double TA = attentionTime();
                 TPS[queuePosition] = T + TA;
                 STA[queuePosition] = STA[queuePosition] + TA;
                 STLL[queuePosition] = STLL[queuePosition] + TPT;
@@ -182,7 +182,7 @@ public class Simulacion {
         queues[minTpsIndex] = queues[minTpsIndex] - 1;
 
         if(queues[minTpsIndex] >= 1) {
-            Double TA =attentionTime(minTpsIndex);
+            Double TA =attentionTime();
             TPS[minTpsIndex] = T + TA;
             STA[minTpsIndex] = STA[minTpsIndex] + TA;
 
@@ -198,7 +198,7 @@ public class Simulacion {
     private static void processEmptyingExit(Integer index) {
 
         if(queues[index] >= 1) {
-            Double TA =attentionTime(index);
+            Double TA =attentionTime();
             T = T+TA;
             TPS[index] = T + TA;
             STA[index] = STA[index] + TA;
@@ -214,7 +214,7 @@ public class Simulacion {
 
         for (int x = 0; x < queues.length && queueNotEmpty; x++){
             if (queues[x]>=0){
-                Double TA = attentionTime(x);
+                Double TA = attentionTime();
                 TPS[x] = T + TA;
                 STA[x] = STA[x] + TA;
                 queueNotEmpty = false;
@@ -312,37 +312,28 @@ public class Simulacion {
 
     ///////////////////////////// TIME TO PROCESS TRANSACTION SIMULATION ////////////////////////////////////////////////////
 
-    /*
-    private static Double attentionTime(int line) {
-        Double rangeMax = ;
-        Double rangeMin = 0D;
-        if (line != 0) {
-            rangeMax = 1200D - 600D/line;
-        }else{
-            rangeMax = 300D;
-        }
-        return ThreadLocalRandom.current().nextDouble(rangeMin, rangeMax);
-    }*/
+    private static Double attentionTime(){
 
-    private static Double attentionTime(int line){
-        Double rangeMax = 6000D;
+        double k = 5.8392;
+        double alfa = 2.1526;
+        double beta = 14.813;
+        double theta = 5.5816;
+
+        Double rangeMax = 0.994939544D;
         Double rangeMin = 0D;
 
-        return ThreadLocalRandom.current().nextDouble(rangeMin, rangeMax);
+        double r = ThreadLocalRandom.current().nextDouble(rangeMin, rangeMax);
+        double rootOfK = Math.pow((1/(1-r)), 1.0 / k);
+        double rootOfAlfa = Math.pow(rootOfK - 1, 1.0 / alfa);
+        return rootOfAlfa * beta + theta;
+
     }
 
 
     ///////////////////////////// ARRIVALS TO QUEUES SIMULATION /////////////////////////////////////////////////////////////
 
-    private static double dailyArrival(double r) {
-        double sigma = 106540;
-        double mu = 128800;
-
-        if(r > 0.9968724239) {
-            dailyArrival(random());
-        }
-
-        return sigma * Math.sqrt(-2 * Math.log(1-r)) + mu;
+    private static Integer dailyArrival() {
+        return 4;
     }
 
     private static double random() {

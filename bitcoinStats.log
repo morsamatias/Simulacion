@@ -1,7 +1,7 @@
-2018-05-11 11:25:11 : - SIMULATION NUMBER: 0 | LINES: 3 | FINAL TIME: 6000000
-2018-05-11 11:25:11 : - Waiting time in the line:1 = 15342.614737022246
-Percentage of transactions in the line 1 of the total: 5.514929656713561
-2018-05-11 11:25:11 : - Waiting time in the line:2 = 106603.24637470723
-Percentage of transactions in the line 2 of the total: 21.579785613476258
-2018-05-11 11:25:11 : - Waiting time in the line:3 = 597469.6011254429
-Percentage of transactions in the line 3 of the total: 72.90528472981018
+2018-05-17 11:59:36 : - SIMULATION NUMBER: 0 | LINES: 3 | FINAL TIME: 60000
+2018-05-17 11:59:36 : - Waiting time in the line:1 = 270.26539588642027
+Percentage of transactions in the line 1 of the total: 5.307892454466608
+2018-05-17 11:59:36 : - Waiting time in the line:2 = 305.0292650654395
+Percentage of transactions in the line 2 of the total: 21.38768430182133
+2018-05-17 11:59:36 : - Waiting time in the line:3 = 410.80309148911897
+Percentage of transactions in the line 3 of the total: 73.30442324371205

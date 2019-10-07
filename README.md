@@ -13,8 +13,8 @@
 | :---------:   |  :----------------:   | :------------:   |
 
 
-### AUTORES:
-
-| [Matias Morsa](https://www.linkedin.com/in/morsamatias/)| [Yamila Casarini](https://github.com/morsamatias/Simulacion) |
-| :---------:   |  :----------------:   |
+|AUTORES|
+|-------|
+| [Matias Morsa](https://www.linkedin.com/in/morsamatias/)| 
+|[Yamila Casarini](https://github.com/morsamatias/Simulacion) |
 
